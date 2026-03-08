@@ -1,0 +1,6 @@
+claim	NeedhamSchroeder,A	Secret_A1	Na	[32mOk[0m	[proof of correctness]
+claim	NeedhamSchroeder,A	Secret_A2	Nb	[32mOk[0m	[proof of correctness]
+claim	NeedhamSchroeder,A	Nisynch_A3	-	[32mOk[0m	[proof of correctness]
+claim	NeedhamSchroeder,B	Secret_B1	Nb	[32mOk[0m	[proof of correctness]
+claim	NeedhamSchroeder,B	Secret_B2	Na	[32mOk[0m	[proof of correctness]
+claim	NeedhamSchroeder,B	Nisynch_B3	-	[32mOk[0m	[proof of correctness]

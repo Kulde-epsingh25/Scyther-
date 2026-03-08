@@ -1,0 +1,4 @@
+claim	OAuth,Client	Secret_C1	Nc	[32mOk[0m	[proof of correctness]
+claim	OAuth,Client	Nisynch_C2	-	[32mOk[0m	[proof of correctness]
+claim	OAuth,Server	Secret_S1	Nc	[32mOk[0m	[proof of correctness]
+claim	OAuth,Server	Nisynch_S2	-	[32mOk[0m	[proof of correctness]

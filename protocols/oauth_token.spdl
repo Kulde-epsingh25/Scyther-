@@ -1,0 +1,19 @@
+protocol OAuth(Client,Server)
+{
+role Client
+{
+    fresh Nc: Nonce;
+    send_1(Client,Server, {Nc}k(Client,Server) );
+    recv_2(Server,Client, {Nc,Server}k(Client,Server) );
+    claim_C1(Client, Secret, Nc);
+    claim_C2(Client, Nisynch);
+}
+role Server
+{
+    var Nc: Nonce;
+    recv_1(Client,Server, {Nc}k(Client,Server) );
+    send_2(Server,Client, {Nc,Server}k(Client,Server) );
+    claim_S1(Server, Secret, Nc);
+    claim_S2(Server, Nisynch);
+}
+}

@@ -1,0 +1,4 @@
+claim	ZeroTrust,U	Secret_U1	Nu	[32mOk[0m	[proof of correctness]
+claim	ZeroTrust,U	Nisynch_U2	-	[32mOk[0m	[proof of correctness]
+claim	ZeroTrust,S	Secret_S1	Nu	[32mOk[0m	[proof of correctness]
+claim	ZeroTrust,S	Nisynch_S2	-	[32mOk[0m	[proof of correctness]

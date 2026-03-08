@@ -1,0 +1,19 @@
+protocol Kerberos(C,S)
+{
+role C
+{
+    fresh Nc: Nonce;
+    send_1(C,S, {Nc}k(C,S) );
+    recv_2(S,C, {Nc,S}k(C,S) );
+    claim_C1(C, Secret, Nc);
+    claim_C2(C, Nisynch);
+}
+role S
+{
+    var Nc: Nonce;
+    recv_1(C,S, {Nc}k(C,S) );
+    send_2(S,C, {Nc,S}k(C,S) );
+    claim_S1(S, Secret, Nc);
+    claim_S2(S, Nisynch);
+}
+}

@@ -1,0 +1,25 @@
+protocol NeedhamSchroeder(A,B)
+{
+role A
+{
+    fresh Na: Nonce;
+    var Nb: Nonce;
+    send_1(A,B, {A,Na}pk(B) );
+    recv_2(B,A, {Na,Nb,B}pk(A) );
+    send_3(A,B, {Nb}pk(B) );
+    claim_A1(A, Secret, Na);
+    claim_A2(A, Secret, Nb);
+    claim_A3(A, Nisynch);
+}
+role B
+{
+    var Na: Nonce;
+    fresh Nb: Nonce;
+    recv_1(A,B, {A,Na}pk(B) );
+    send_2(B,A, {Na,Nb,B}pk(A) );
+    recv_3(A,B, {Nb}pk(B) );
+    claim_B1(B, Secret, Nb);
+    claim_B2(B, Secret, Na);
+    claim_B3(B, Nisynch);
+}
+}

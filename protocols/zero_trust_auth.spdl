@@ -1,0 +1,19 @@
+protocol ZeroTrust(U,S)
+{
+role U
+{
+    fresh Nu: Nonce;
+    send_1(U,S, {Nu}k(U,S) );
+    recv_2(S,U, {Nu,S}k(U,S) );
+    claim_U1(U, Secret, Nu);
+    claim_U2(U, Nisynch);
+}
+role S
+{
+    var Nu: Nonce;
+    recv_1(U,S, {Nu}k(U,S) );
+    send_2(S,U, {Nu,S}k(U,S) );
+    claim_S1(S, Secret, Nu);
+    claim_S2(S, Nisynch);
+}
+}
