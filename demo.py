@@ -60,10 +60,10 @@ def pause(seconds=None):
 def sep(char="─", width=64, colour=B):
     print(f"{colour}  {'─' * width}{RST}")
 
-def header(title: str, icon: str = "🔹") -> None:
+def header(title: str, icon: str = "") -> None:
     print()
     print(f"{W}  ╔{'═' * 62}╗{RST}")
-    print(f"{W}  ║  {icon}  {title:<57}║{RST}")
+    print(f"{W}  ║  {title:<60}║{RST}")
     print(f"{W}  ╚{'═' * 62}╝{RST}")
     print()
 
@@ -76,7 +76,7 @@ def step(num: int, total: int, title: str) -> None:
 
 def say(text: str, colour=DIM) -> None:
     """Narrator line — explains what is happening."""
-    print(f"{colour}  ▶  {text}{RST}")
+    print(f"{colour}  >>  {text}{RST}")
     pause(SHORT_PAUSE)
 
 def show_input(prompt: str, value: str) -> None:
@@ -92,16 +92,16 @@ def show_input(prompt: str, value: str) -> None:
     pause(SHORT_PAUSE)
 
 def result_ok(msg: str) -> None:
-    print(f"  {G}✅  {msg}{RST}")
+    print(f"  {G}[OK]    {msg}{RST}")
 
 def result_fail(msg: str) -> None:
-    print(f"  {R}❌  {msg}{RST}")
+    print(f"  {R}[FAIL]  {msg}{RST}")
 
 def result_warn(msg: str) -> None:
-    print(f"  {Y}⚠   {msg}{RST}")
+    print(f"  {Y}[WARN]  {msg}{RST}")
 
 def result_info(msg: str) -> None:
-    print(f"  {C}ℹ   {msg}{RST}")
+    print(f"  {C}[INFO]  {msg}{RST}")
 
 def run_script(path: str, label: str) -> str:
     """Run a shell script and stream output."""
@@ -145,11 +145,11 @@ def demo_intro():
     print(f"""
 {C}  ╔══════════════════════════════════════════════════════════════════╗
   ║                                                                  ║
-  ║   🔐  SCYTHER RESEARCH PLATFORM  —  FULL AUTOMATED DEMO         ║
+  ║   SCYTHER RESEARCH PLATFORM  --  FULL AUTOMATED DEMO            ║
   ║       Authentication & Authorisation Formal Verification         ║
   ║                                                                  ║
   ║   Authors  : Kuldeep Singh & Sahil                               ║
-  ║   Tool     : Scyther CLI — Formal Protocol Verifier              ║
+  ║   Tool     : Scyther CLI -- Formal Protocol Verifier             ║
   ║                                                                  ║
   ╚══════════════════════════════════════════════════════════════════╝{RST}
 """)
@@ -184,7 +184,7 @@ def demo_intro():
 
 def demo_database():
     step(1, TOTAL_STEPS, "Database Initialisation")
-    header("SQLite Database Setup", "🗄")
+    header("SQLite Database Setup")
 
     say("Initialising the database — creates all tables if they don't exist.")
     init_db()
@@ -208,7 +208,7 @@ def demo_database():
 
 def demo_password_security():
     step(2, TOTAL_STEPS, "Password Security & Validation")
-    header("Password Strength Checks", "🔑")
+    header("Password Strength Checks")
 
     say("Testing the password strength validator with various inputs.")
     print()
@@ -232,7 +232,7 @@ def demo_password_security():
 
     print()
     sep()
-    header("Password Hashing & Constant-Time Verification", "🔒")
+    header("Password Hashing & Constant-Time Verification")
     say("Hashing uses SHA-256. Comparison uses hmac.compare_digest to prevent timing attacks.")
     print()
 
@@ -250,7 +250,7 @@ def demo_password_security():
 
 def demo_registration():
     step(3, TOTAL_STEPS, "User Registration")
-    header("Registering Users via auth_system.py", "👤")
+    header("Registering Users via auth_system.py")
 
     # wipe existing demo users
     conn = get_db()
@@ -298,7 +298,7 @@ def demo_login():
     conn.close()
 
     # ── 4a: Login before approval ────────────────────────
-    header("Login Before Admin Approval (bob)", "⏳")
+    header("Login Before Admin Approval (bob)")
     say("bob is registered but not yet approved — login should be blocked.")
     show_input("  Username : ", "bob")
     show_input("  Password : ", "***********")
@@ -309,7 +309,7 @@ def demo_login():
     pause()
 
     # ── 4b: Successful login ─────────────────────────────
-    header("Successful Login (alice)", "✅")
+    header("Successful Login (alice)")
     say("alice is approved — login should succeed.")
     show_input("  Username : ", "alice")
     show_input("  Password : ", "**************")
@@ -320,7 +320,7 @@ def demo_login():
     pause()
 
     # ── 4c: Wrong password ───────────────────────────────
-    header("Wrong Password Attempts → Account Lockout (alice)", "🔒")
+    header("Wrong Password Attempts - Account Lockout (alice)")
     say("Sending 5 wrong passwords — account should lock on attempt 5.")
     print()
 
@@ -336,7 +336,7 @@ def demo_login():
         if attempt < 5:
             result_fail(f"Attempt {attempt}/5 — {msg}")
         else:
-            result_warn(f"Attempt {attempt}/5 — 🔒 {msg}")
+            result_warn(f"Attempt {attempt}/5 — [LOCKED] {msg}")
         pause(0.4)
 
     # ── 4d: Attempt to login while locked ────────────────
@@ -350,7 +350,7 @@ def demo_login():
     pause()
 
     # ── 4e: Non-existent user ────────────────────────────
-    header("Unknown User Login Attempt", "❓")
+    header("Unknown User Login Attempt")
     say("Attempting to login with a username that doesn't exist.")
     output = run_py("auth_system.py", ["login"], "ghost\nPassword@1\n")
     for line in output.strip().splitlines():
@@ -366,7 +366,7 @@ def demo_admin():
     step(5, TOTAL_STEPS, "Admin Panel Operations")
 
     # ── 5a: Approve bob and charlie ──────────────────────
-    header("Approving Pending Users", "✅")
+    header("Approving Pending Users")
     say("Admin approves bob and charlie directly via the database layer.")
 
     conn = get_db()
@@ -404,7 +404,7 @@ def demo_admin():
 
     # ── 5d: View all users formatted ─────────────────────
     print()
-    header("Current User Table", "📋")
+    header("Current User Table")
     conn = get_db()
     rows = conn.execute(
         "SELECT username, role, approved, locked, failed_attempts, created_at FROM users"
@@ -421,7 +421,7 @@ def demo_admin():
 
     # ── 5e: View audit log ───────────────────────────────
     print()
-    header("Audit Log — Last 15 Events", "📋")
+    header("Audit Log — Last 15 Events")
     conn = get_db()
     logs = conn.execute(
         "SELECT username, status, timestamp FROM login_logs ORDER BY rowid DESC LIMIT 15"
@@ -441,7 +441,7 @@ def demo_admin():
 
 def demo_verification():
     step(6, TOTAL_STEPS, "Scyther Protocol Verification")
-    header("Formal Verification of All 4 Protocols", "🔬")
+    header("Formal Verification of All 4 Protocols")
 
     protocols = [
         ("Needham-Schroeder (Lowe Fix)", "protocols/needham_schroeder.spdl",
@@ -465,11 +465,11 @@ def demo_verification():
 
     # Parse and display summary
     print()
-    header("Verification Summary", "📊")
+    header("Verification Summary")
     results_dir = os.path.join(BASE, "results")
     for name, _, desc in protocols:
         say(desc)
-        result_ok(f"{name} — all claims PASS ✅")
+        result_ok(f"{name} — all claims PASS")
         pause(0.5)
     pause()
 
@@ -498,7 +498,7 @@ def _show_prerecorded_results():
     for proto, claims in prerecorded.items():
         print(f"\n  {W}[Protocol] {proto}{RST}")
         for cid, nonce, status in claims:
-            print(f"    {G}✅  {cid:<20} {nonce:<6} {status}{RST}")
+            print(f"    {G}[OK]  {cid:<20} {nonce:<6} {status}{RST}")
             pause(0.2)
 
 
@@ -506,7 +506,7 @@ def _show_prerecorded_results():
 
 def demo_raw_results():
     step(7, TOTAL_STEPS, "Raw Verification Results")
-    header("Parsing Scyther Output Files from results/", "📄")
+    header("Parsing Scyther Output Files from results/")
 
     results_dir = os.path.join(BASE, "results")
     files = {
@@ -535,8 +535,8 @@ def demo_raw_results():
                     cid    = parts[2] if len(parts) > 2 else "?"
                     nonce  = parts[3] if len(parts) > 3 else "-"
                     status = parts[4] if len(parts) > 4 else "?"
-                    icon   = "✅" if "Ok" in status else "❌"
-                    print(f"    {icon}  {W}{cid:<22}{RST} nonce={Y}{nonce:<6}{RST} → {G if 'Ok' in status else R}{status}{RST}")
+                    icon   = "[OK] " if "Ok" in status else "[FAIL]"
+                    print(f"    {icon}  {W}{cid:<22}{RST} nonce={Y}{nonce:<6}{RST} -> {G if 'Ok' in status else R}{status}{RST}")
                     pause(0.25)
 
     if not any_shown:
@@ -548,7 +548,7 @@ def demo_raw_results():
 
 def demo_attack_graphs():
     step(8, TOTAL_STEPS, "Attack Graph Generation")
-    header("DOT Graph Files in attack_graphs/", "🗂")
+    header("DOT Graph Files in attack_graphs/")
 
     graphs_dir = os.path.join(BASE, "attack_graphs")
     dot_files  = []
@@ -563,7 +563,7 @@ def demo_attack_graphs():
         print()
         for f in sorted(dot_files):
             has_png = f.replace(".dot", ".png") in png_files
-            png_tag = f"{G}PNG ✔{RST}" if has_png else f"{Y}PNG ✘{RST}"
+            png_tag = f"{G}PNG: Yes{RST}" if has_png else f"{Y}PNG: No{RST}"
             fpath   = os.path.join(graphs_dir, f)
             lines   = sum(1 for _ in open(fpath))
             print(f"  {W}  {f:<40}{RST} {png_tag}  {DIM}({lines} lines){RST}")
@@ -578,7 +578,7 @@ def demo_attack_graphs():
 
     # Explain what the graphs show
     print()
-    header("What Attack Graphs Represent", "📐")
+    header("What Attack Graphs Represent")
     concepts = [
         ("Node",          "A protocol role instance (A, B, Intruder)"),
         ("Edge / Arrow",  "A message send or receive between roles"),
@@ -600,7 +600,7 @@ def demo_attack_graphs():
 
 def demo_dashboard():
     step(9, TOTAL_STEPS, "Security Dashboard")
-    header("Live Security Operations Dashboard", "📊")
+    header("Live Security Operations Dashboard")
 
     say("The dashboard aggregates: user stats, login audit, protocol results, graph files.")
     print()
@@ -608,7 +608,7 @@ def demo_dashboard():
     stats = get_stats()
 
     # User stats
-    print(f"  {W}👤  User Statistics{RST}")
+    print(f"  {W}User Statistics{RST}")
     sep()
     fields = [
         ("Total registered",  stats["total_users"]),
@@ -624,7 +624,7 @@ def demo_dashboard():
 
     # Login events
     print()
-    print(f"  {W}📋  Login Audit{RST}")
+    print(f"  {W}Login Audit{RST}")
     sep()
     total  = stats["success_logins"] + stats["failed_logins"]
     rate   = (stats["success_logins"] / total * 100) if total else 0
@@ -641,7 +641,7 @@ def demo_dashboard():
 
     # Protocol results
     print()
-    print(f"  {W}🔬  Protocol Verification{RST}")
+    print(f"  {W}Protocol Verification{RST}")
     sep()
     results_map = {
         "Needham-Schroeder": "ns_result.txt",
@@ -655,15 +655,15 @@ def demo_dashboard():
             content = open(fpath).read()
             passes  = content.count("Ok")
             fails   = content.count("Fail")
-            verdict = f"{G}✅ SECURE{RST}" if fails == 0 else f"{R}❌ FAIL{RST}"
+            verdict = f"{G}[SECURE]{RST}" if fails == 0 else f"{R}[FAIL]{RST}"
             print(f"  {pname:<28} {verdict}  {DIM}({passes} pass / {fails} fail){RST}")
         else:
-            print(f"  {pname:<28} {Y}⚠ Not run yet{RST}")
+            print(f"  {pname:<28} {Y}[WARN] Not run yet{RST}")
         pause(0.3)
 
     # Overall assessment
     print()
-    print(f"  {W}🛡   Overall Assessment{RST}")
+    print(f"  {W}Overall Assessment{RST}")
     sep()
     issues = []
     if stats["pending"]  > 0: issues.append(f"{stats['pending']} user(s) awaiting approval")
@@ -684,7 +684,7 @@ def demo_dashboard():
 
 def demo_security_controls():
     step(10, TOTAL_STEPS, "Security Controls & Rate Limiting")
-    header("In-Process Rate Limiting", "🚦")
+    header("In-Process Rate Limiting")
 
     say("The rate limiter tracks login attempts per username within a rolling time window.")
     say("Maximum 5 attempts per 5-minute window — tested here with a 10-attempt sequence.")
@@ -696,7 +696,7 @@ def demo_security_controls():
     for i in range(1, 11):
         blocked = is_rate_limited("demo_user", max_attempts=5, window_seconds=300)
         colour  = R if blocked else G
-        status  = "🔴 BLOCKED" if blocked else "🟢 allowed"
+        status  = "[BLOCKED]" if blocked else "[OK]     "
         print(f"  Attempt {i:>2}/10   {colour}{status}{RST}")
         pause(0.25)
 
@@ -704,7 +704,7 @@ def demo_security_controls():
 
     # Input sanitisation
     print()
-    header("Input Sanitisation", "🧹")
+    header("Input Sanitisation")
     say("Usernames are validated with a strict regex before hitting the database.")
     print()
 
@@ -730,7 +730,7 @@ def demo_security_controls():
                 result_warn(f"Should have been REJECTED: '{display}'")
         except ValueError:
             if not should_pass:
-                result_fail(f"{desc:<35} '{display}'  → rejected ✔")
+                result_fail(f"{desc:<35} '{display}'  -> rejected")
             else:
                 result_warn(f"Should have been ACCEPTED: '{display}'")
         pause(0.25)
@@ -745,22 +745,22 @@ def demo_summary():
     print(f"""
 {G}  ╔══════════════════════════════════════════════════════════════════╗
   ║                                                                  ║
-  ║   🎉  DEMO COMPLETE — ALL STEPS PASSED                          ║
+  ║   DEMO COMPLETE -- ALL STEPS PASSED                             ║
   ║                                                                  ║
   ╚══════════════════════════════════════════════════════════════════╝{RST}
 """)
 
     steps_done = [
-        ("✅", "STEP  1", "Database initialised — users, login_logs, blacklist tables"),
-        ("✅", "STEP  2", "Password hashing (SHA-256), strength rules, timing-safe compare"),
-        ("✅", "STEP  3", "User registration — valid accepted, weak/invalid rejected"),
-        ("✅", "STEP  4", "Login — success, approval gate, wrong password, lockout"),
-        ("✅", "STEP  5", "Admin — approve, unlock, blacklist, user table, audit log"),
-        ("✅", "STEP  6", "Scyther — 4 protocols, 18 claims, all PASS"),
-        ("✅", "STEP  7", "Raw result parsing — ANSI-stripped, formatted output"),
-        ("✅", "STEP  8", "Attack graph DOT files explained"),
-        ("✅", "STEP  9", "Security dashboard — live stats, protocol status, assessment"),
-        ("✅", "STEP 10", "Rate limiting (5/5min), input sanitisation, injection prevention"),
+        ("[OK]", "STEP  1", "Database initialised — users, login_logs, blacklist tables"),
+        ("[OK]", "STEP  2", "Password hashing (SHA-256), strength rules, timing-safe compare"),
+        ("[OK]", "STEP  3", "User registration — valid accepted, weak/invalid rejected"),
+        ("[OK]", "STEP  4", "Login — success, approval gate, wrong password, lockout"),
+        ("[OK]", "STEP  5", "Admin — approve, unlock, blacklist, user table, audit log"),
+        ("[OK]", "STEP  6", "Scyther — 4 protocols, 18 claims, all PASS"),
+        ("[OK]", "STEP  7", "Raw result parsing — ANSI-stripped, formatted output"),
+        ("[OK]", "STEP  8", "Attack graph DOT files explained"),
+        ("[OK]", "STEP  9", "Security dashboard — live stats, protocol status, assessment"),
+        ("[OK]", "STEP 10", "Rate limiting (5/5min), input sanitisation, injection prevention"),
     ]
 
     for icon, label, desc in steps_done:

@@ -29,10 +29,10 @@ def admin_login() -> None:
     password = input("  Admin password : ").strip()
 
     if not verify_password(password, ADMIN_HASH):
-        print("\n  ❌ Access denied — incorrect admin password.\n")
+        print("\n  [ERROR] Access denied — incorrect admin password.\n")
         sys.exit(1)
 
-    print("\n  ✅ Admin authenticated.\n")
+    print("\n  [OK] Admin authenticated.\n")
 
 
 # ─────────────────────────────────────────────────────────
@@ -48,10 +48,10 @@ def approve_user() -> None:
         )
         conn.commit()
         if cur.rowcount:
-            print(f"\n  ✅ '{username}' approved successfully.\n")
+            print(f"\n  [OK] '{username}' approved successfully.\n")
             log_event(username, "ADMIN_APPROVED")
         else:
-            print(f"\n  ❌ User '{username}' not found.\n")
+            print(f"\n  [ERROR] User '{username}' not found.\n")
     finally:
         conn.close()
 
@@ -70,10 +70,10 @@ def unlock_user() -> None:
         )
         conn.commit()
         if cur.rowcount:
-            print(f"\n  ✅ '{username}' unlocked.\n")
+            print(f"\n  [OK] '{username}' unlocked.\n")
             log_event(username, "ADMIN_UNLOCKED")
         else:
-            print(f"\n  ❌ User '{username}' not found.\n")
+            print(f"\n  [ERROR] User '{username}' not found.\n")
     finally:
         conn.close()
 
@@ -95,10 +95,10 @@ def blacklist_user() -> None:
             "UPDATE users SET locked = 1 WHERE username = ?", (username,)
         )
         conn.commit()
-        print(f"\n  ✅ '{username}' blacklisted and locked.\n")
+        print(f"\n  [OK] '{username}' blacklisted and locked.\n")
         log_event(username, f"BLACKLISTED | {reason}")
     except sqlite3.Error as e:
-        print(f"\n  ❌ Database error: {e}\n")
+        print(f"\n  [ERROR] Database error: {e}\n")
     finally:
         conn.close()
 
@@ -111,17 +111,17 @@ def remove_user() -> None:
     username = input("  Username to remove: ").strip()
     confirm  = input(f"  Confirm removal of '{username}'? (yes/no): ").strip().lower()
     if confirm != "yes":
-        print("\n  ⚠  Cancelled.\n")
+        print("\n  [WARN]  Cancelled.\n")
         return
     conn = get_db()
     try:
         cur = conn.execute("DELETE FROM users WHERE username = ?", (username,))
         conn.commit()
         if cur.rowcount:
-            print(f"\n  ✅ '{username}' removed from system.\n")
+            print(f"\n  [OK] '{username}' removed from system.\n")
             log_event(username, "ADMIN_REMOVED")
         else:
-            print(f"\n  ❌ User '{username}' not found.\n")
+            print(f"\n  [ERROR] User '{username}' not found.\n")
     finally:
         conn.close()
 
@@ -147,8 +147,8 @@ def view_users() -> None:
     print(f"  │ {'Username':<18} {'Role':<8} {'Approved':<10} {'Locked':<8} {'Fails':<6} {'Created':<20} │")
     print("  ├─────────────────────────────────────────────────────────────────────────┤")
     for r in rows:
-        approved = "✅ Yes" if r["approved"] else "⏳ No"
-        locked   = "🔒 Yes" if r["locked"]   else "🟢 No"
+        approved = "Yes" if r["approved"] else "No "
+        locked   = "Yes" if r["locked"]   else "No "
         created  = str(r["created_at"])[:19]
         print(f"  │ {r['username']:<18} {r['role']:<8} {approved:<10} {locked:<8} {str(r['failed_attempts']):<6} {created:<20} │")
     print("  └─────────────────────────────────────────────────────────────────────────┘\n")
@@ -225,7 +225,7 @@ def main() -> None:
         if action:
             action()
         else:
-            print("\n  ❌ Invalid option.\n")
+            print("\n  [ERROR] Invalid option.\n")
 
 
 if __name__ == "__main__":

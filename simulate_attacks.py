@@ -120,26 +120,26 @@ def p(msg, colour=RST):
 
 def say(msg):
     if not QUIET:
-        print(f"{DIM}  ▶  {msg}{RST}")
+        print(f"{DIM}  >>  {msg}{RST}")
         time.sleep(PAUSE*3)
 
-def attack_header(num, name, icon="💥"):
+def attack_header(num, name, icon=""):
     print()
     print(f"{R}  ╔══════════════════════════════════════════════════════════════╗{RST}")
-    print(f"{R}  ║  {icon} ATTACK {num}: {name:<51}║{RST}")
+    print(f"{R}  ║  ATTACK {num}: {name:<53}║{RST}")
     print(f"{R}  ╚══════════════════════════════════════════════════════════════╝{RST}")
     print()
     time.sleep(STEP)
 
 def show_result(success, msg):
     colour = G if success else R
-    icon   = "✅" if success else "❌"
+    icon   = "[OK]  " if success else "[FAIL]"
     print(f"  {colour}{icon}  {msg}{RST}")
     time.sleep(PAUSE)
 
 
 def attack_brute_force():
-    attack_header(1, "Brute Force Password Attack", "🔨")
+    attack_header(1, "Brute Force Password Attack")
     say("Attacker tries common passwords against a known username.")
     wordlist = ["password","123456","password1","qwerty","abc123","letmein",
                 "monkey","dragon","master","iloveyou","admin","welcome",
@@ -152,18 +152,18 @@ def attack_brute_force():
             success, reason = _attempt_login(conn, "victim_alice", pwd)
             STATS["brute_attempts"] += 1
             colour = G if success else R
-            print(f"  {colour}{'✅' if success else '❌'}  [{i:>2}/{len(wordlist)}]  {pwd:<25}  →  {reason}{RST}")
+            print(f"  {colour}{'[OK] ' if success else '[FAIL]'}  [{i:>2}/{len(wordlist)}]  {pwd:<25}  ->  {reason}{RST}")
             time.sleep(PAUSE)
             if reason == "locked":
                 locked_at = i
-                p(f"\n  {Y}⚠  Locked at attempt {i}!{RST}")
+                p(f"\n  {Y}[WARN]  Locked at attempt {i}!{RST}")
                 break
         conn.execute("UPDATE users SET locked=0,failed_attempts=0 WHERE username='victim_alice'")
     show_result(False, f"Brute force BLOCKED — locked after {locked_at} attempts" if locked_at else "Brute force failed")
 
 
 def attack_credential_stuffing():
-    attack_header(2, "Credential Stuffing Attack", "📦")
+    attack_header(2, "Credential Stuffing Attack")
     say("Attacker uses username:password pairs leaked from other breaches.")
     targets = [("user_bob","Bob@Secure99!"),("user_carol","Carol@Safe777!"),("user_dave","Dave@Pass123!")]
     leaked  = [("user_bob","hunter2"),("user_bob","password123"),("user_carol","qwerty99"),
@@ -179,16 +179,16 @@ def attack_credential_stuffing():
             if success:
                 hits += 1
                 _log(conn, username, "CREDENTIAL_STUFFING_SUCCESS", "reused_password_match")
-                print(f"  {R}💥  HIT!  {username:<18} : {password:<25}  →  LOGIN SUCCESS{RST}")
+                print(f"  {R}[HIT!]  {username:<18} : {password:<25}  ->  LOGIN SUCCESS{RST}")
             else:
-                print(f"  {DIM}  miss  {username:<18} : {password:<25}  →  {reason}{RST}")
+                print(f"  {DIM}  miss  {username:<18} : {password:<25}  ->  {reason}{RST}")
             time.sleep(PAUSE)
     print()
     show_result(False, f"{hits} credential(s) matched — reused passwords are dangerous!")
 
 
 def attack_user_enumeration():
-    attack_header(3, "Username Enumeration Attack", "🔍")
+    attack_header(3, "Username Enumeration Attack")
     say("Attacker probes login to discover valid usernames.")
     probes = ["admin","administrator","root","test","guest","real_user_1",
               "real_user_2","john","alice_admin","superuser","sysadmin","victim_alice"]
@@ -205,14 +205,14 @@ def attack_user_enumeration():
             else:
                 found.append(username)
                 _log(conn, username, "ENUMERATION_PROBE", "attacker_discovered_username")
-                print(f"  {Y}👁  {username:<25}  EXISTS  (reason: {reason}){RST}")
+                print(f"  {Y}[FOUND]  {username:<25}  EXISTS  (reason: {reason}){RST}")
             time.sleep(PAUSE)
     print()
     show_result(False, f"Enumerated {len(found)} valid usernames: {', '.join(found)}")
 
 
 def attack_sql_injection():
-    attack_header(4, "SQL Injection Attack", "💉")
+    attack_header(4, "SQL Injection Attack")
     say("Parameterised queries should block all injection attempts.")
     injections = [
         ("' OR '1'='1",              "password",   "Classic OR bypass"),
@@ -234,18 +234,18 @@ def attack_sql_injection():
                 _log(conn, username, "SQL_INJECTION_ATTEMPT", desc)
                 if success:
                     bypassed += 1
-                    print(f"  {R}💥  BYPASSED!  {desc:<38} ← CRITICAL{RST}")
+                    print(f"  {R}[BYPASS]  {desc:<38} <- CRITICAL{RST}")
                 else:
-                    print(f"  {G}🛡  Blocked     {desc:<38} reason={reason}{RST}")
+                    print(f"  {G}[BLOCKED]  {desc:<38} reason={reason}{RST}")
             except Exception as e:
-                print(f"  {G}🛡  Exception    {desc:<38} {str(e)[:30]}{RST}")
+                print(f"  {G}[BLOCKED]  Exception   {desc:<38} {str(e)[:30]}{RST}")
             time.sleep(PAUSE)
     print()
     show_result(bypassed == 0, "All SQL injection attempts blocked" if bypassed==0 else f"{bypassed} bypassed — CRITICAL")
 
 
 def attack_lockout_dos():
-    attack_header(5, "Account Lockout DoS Attack", "🔒")
+    attack_header(5, "Account Lockout DoS Attack")
     say("Attacker deliberately locks out legitimate users.")
     victims = ["dos_victim_1","dos_victim_2","dos_victim_3"]
     STATS["attacks_simulated"] += 1
@@ -264,7 +264,7 @@ def attack_lockout_dos():
 
 
 def attack_rate_limit_evasion():
-    attack_header(6, "Rate Limit Evasion Attempt", "🚦")
+    attack_header(6, "Rate Limit Evasion Attempt")
     say("Attacker rotates across usernames to evade per-user rate limiting.")
     targets   = ["rl_target_a","rl_target_b","rl_target_c","rl_target_d"]
     passwords = ["password1","qwerty","abc123","letmein","pass123","dragon","master","hello","monkey","shadow"]
@@ -279,24 +279,24 @@ def attack_rate_limit_evasion():
                 if blocked:
                     blocked_count += 1
                     _log(conn, target, "RATE_LIMITED", f"evasion_attempt_{pwd}")
-                    print(f"  {R}🔴  {target:<20} '{pwd}'  →  RATE LIMITED{RST}")
+                    print(f"  {R}[RATE LIMITED]  {target:<20} '{pwd}'  ->  RATE LIMITED{RST}")
                 else:
                     _, reason = _attempt_login(conn, target, pwd)
-                    print(f"  {DIM}  🟡  {target:<20} '{pwd}'  →  {reason}{RST}")
+                    print(f"  {DIM}  ...  {target:<20} '{pwd}'  ->  {reason}{RST}")
                 time.sleep(PAUSE)
     print()
     show_result(blocked_count > 0, f"Rate limiter triggered {blocked_count} time(s)")
 
 
 def attack_replay():
-    attack_header(7, "Replay Attack Simulation", "🔁")
+    attack_header(7, "Replay Attack Simulation")
     say("Attacker replays a captured session token 8 times.")
     STATS["attacks_simulated"] += 1
     with db() as conn:
         _ensure_user(conn, "replay_victim", "Replay@Secure1!", approved=True)
         _attempt_login(conn, "replay_victim", "Replay@Secure1!")
         token = f"TOKEN_{datetime.now().strftime('%H%M%S')}"
-        p(f"  {G}✅  Legitimate login captured. Token: {DIM}{token}{RST}\n")
+        p(f"  {G}[OK]  Legitimate login captured. Token: {DIM}{token}{RST}\n")
         for i in range(1, 9):
             _log(conn, "replay_victim", "REPLAY_ATTACK_DETECTED", f"replay_{i}_of_8 token={token}")
             STATS["replay_attempts"] += 1
@@ -307,7 +307,7 @@ def attack_replay():
 
 
 def attack_privilege_escalation():
-    attack_header(8, "Privilege Escalation Attempt", "👑")
+    attack_header(8, "Privilege Escalation Attempt")
     say("Attacker tries to modify their own role after registering.")
     STATS["attacks_simulated"] += 1
     with db() as conn:
@@ -316,7 +316,7 @@ def attack_privilege_escalation():
         p(f"  {W}Role before: {before['role']}{RST}\n")
         for label in ["role=admin","role=superuser","approved=99"]:
             _log(conn, "priv_attacker", "PRIVILEGE_ESCALATION_ATTEMPT", label)
-            print(f"  {R}⚡  Attempted: {label:<35}  →  LOGGED{RST}")
+            print(f"  {R}[ATTEMPT]  {label:<35}  ->  LOGGED{RST}")
             time.sleep(PAUSE)
         after = conn.execute("SELECT role FROM users WHERE username='priv_attacker'").fetchone()
     print()
@@ -325,7 +325,7 @@ def attack_privilege_escalation():
 
 
 def attack_blacklist_bypass():
-    attack_header(9, "Blacklist Bypass Attempt", "🚫")
+    attack_header(9, "Blacklist Bypass Attempt")
     say("Blacklisted user tries various methods to regain access.")
     STATS["blacklisted"] += 1
     STATS["attacks_simulated"] += 1
@@ -347,16 +347,16 @@ def attack_blacklist_bypass():
             success, reason = _attempt_login(conn, username, password)
             _log(conn, username, "BLACKLIST_BYPASS_ATTEMPT", desc)
             if success:
-                print(f"  {R}💥  BYPASS SUCCESS: {desc:<35} ← CRITICAL{RST}")
+                print(f"  {R}[BYPASS]  BYPASS SUCCESS: {desc:<35} <- CRITICAL{RST}")
             else:
-                print(f"  {G}🛡  Blocked: {desc:<35} reason={reason}{RST}")
+                print(f"  {G}[BLOCKED]  {desc:<35} reason={reason}{RST}")
             time.sleep(PAUSE)
     print()
     show_result(True, "All blacklist bypass attempts blocked")
 
 
 def attack_registration_spam():
-    attack_header(10, "Mass Registration Spam", "📝")
+    attack_header(10, "Mass Registration Spam")
     say("Attacker floods registration to pollute the user database.")
     STATS["attacks_simulated"] += 1
     created = 0
@@ -370,7 +370,7 @@ def attack_registration_spam():
                 )
                 created += 1
                 _log(conn, username, "SPAM_REGISTRATION", "mass_registration_attack")
-                print(f"  {Y}📝  Created: {username}{RST}")
+                print(f"  {Y}[SPAM]   Created: {username}{RST}")
             except sqlite3.IntegrityError:
                 print(f"  {DIM}  skip: {username} already exists{RST}")
             time.sleep(PAUSE)
@@ -381,7 +381,7 @@ def attack_registration_spam():
 def print_summary():
     print()
     print(f"{R}  ╔══════════════════════════════════════════════════════════════╗{RST}")
-    print(f"{R}  ║              ⚔  Attack Simulation Complete                  ║{RST}")
+    print(f"{R}  ║              Attack Simulation Complete                     ║{RST}")
     print(f"{R}  ╚══════════════════════════════════════════════════════════════╝{RST}")
     print()
     rows = [
@@ -407,7 +407,7 @@ def print_summary():
     print(f"  {C}  Total audit log entries  : {W}{total}{RST}")
     print(f"  {R}  Suspicious events in DB  : {W}{bad}{RST}")
     print()
-    print(f"  {G}  ✅ All attack data is now in the database.{RST}")
+    print(f"  {G}  [OK] All attack data is now in the database.{RST}")
     print(f"  {G}  Dashboard:  python3 auth_cli/main.py  →  option 7{RST}")
     print(f"  {G}  Full demo:  python3 demo.py{RST}")
     print()
@@ -419,7 +419,7 @@ def main():
     os.system("clear")
     print(f"""
 {R}  ╔══════════════════════════════════════════════════════════════════╗
-  ║   ⚔  SCYTHER PLATFORM — ATTACK SIMULATION SUITE                ║
+  ║   SCYTHER PLATFORM -- ATTACK SIMULATION SUITE                  ║
   ║   Brute Force · Stuffing · Enumeration · SQL Injection          ║
   ║   DoS Lockout · Rate Evasion · Replay · Escalation · Spam       ║
   ╚══════════════════════════════════════════════════════════════════╝{RST}
