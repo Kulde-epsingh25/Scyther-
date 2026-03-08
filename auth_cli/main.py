@@ -29,7 +29,7 @@ def banner() -> None:
     print("  ║    ███████║╚██████╗   ██║      ██║   ██║  ██║███████╗██║  ██║║")
     print("  ║    ╚══════╝ ╚═════╝   ╚═╝      ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝║")
     print("  ║                                                              ║")
-    print("  ║      🔐 Authentication & Authorisation Research Platform     ║")
+    print("  ║      Authentication & Authorisation Research Platform        ║")
     print("  ║         Formal Protocol Verification using Scyther CLI       ║")
     print("  ║                                                              ║")
     print("  ║  Authors  : Kuldeep Singh & Sahil                           ║")
@@ -48,17 +48,17 @@ def menu() -> str:
     print("  │              Main Menu                       │")
     print("  ├──────────────────────────────────────────────┤")
     print("  │                                              │")
-    print("  │   👤  Authentication                         │")
+    print("  │   Authentication                             │")
     print("  │       1   Register New User                  │")
     print("  │       2   Login                              │")
     print("  │       3   Admin Panel                        │")
     print("  │                                              │")
-    print("  │   🔬  Scyther Protocol Verification          │")
+    print("  │   Scyther Protocol Verification              │")
     print("  │       4   Verify Protocols                   │")
     print("  │       5   Generate Attack Graphs             │")
     print("  │       6   View Attack Graphs (Interactive)   │")
     print("  │                                              │")
-    print("  │   📊  Reporting                              │")
+    print("  │   Reporting                                  │")
     print("  │       7   Security Dashboard                 │")
     print("  │       8   View Raw Verification Results      │")
     print("  │                                              │")
@@ -92,12 +92,12 @@ def admin_panel() -> None:
 
 
 def verify_protocols() -> None:
-    print("\n  ⟳  Running Scyther protocol verification...\n")
+    print("\n  Running Scyther protocol verification...\n")
     run(f"bash {BASE}/scripts/verify_protocols.sh")
 
 
 def generate_graphs() -> None:
-    print("\n  ⟳  Generating attack graphs...\n")
+    print("\n  Generating attack graphs...\n")
     run(f"bash {BASE}/scripts/generate_graphs.sh")
 
 
@@ -112,7 +112,7 @@ def security_dashboard() -> None:
 def view_raw_results() -> None:
     results_dir = os.path.join(BASE, "results")
     if not os.path.exists(results_dir) or not os.listdir(results_dir):
-        print("\n  ⚠  No results found. Run option 4 first.\n")
+        print("\n  [WARN]  No results found. Run option 4 first.\n")
         return
 
     print()
@@ -131,7 +131,7 @@ def view_raw_results() -> None:
                     cid    = parts[2] if len(parts) > 2 else "?"
                     nonce  = parts[3] if len(parts) > 3 else "-"
                     status = parts[4] if len(parts) > 4 else "?"
-                    icon   = "✅" if "Ok" in status else "❌"
+                    icon   = "[OK] " if "Ok" in status else "[FAIL]"
                     print(f"    {icon}  {cid:<20} {nonce:<8} {status}")
         print()
 
@@ -160,14 +160,14 @@ def main() -> None:
         choice = menu()
 
         if choice == "0":
-            print("\n  👋  Goodbye!\n")
+            print("\n  Goodbye!\n")
             sys.exit(0)
 
         action = ACTIONS.get(choice)
         if action:
             action()
         else:
-            print("\n  ❌  Invalid option. Please choose 0–8.\n")
+            print("\n  [ERROR]  Invalid option. Please choose 0-8.\n")
 
         input("\n  Press Enter to return to main menu...")
 

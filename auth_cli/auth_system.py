@@ -30,13 +30,13 @@ def register_user() -> None:
     try:
         username = sanitise_username(raw_username)
     except ValueError as e:
-        print(f"\n  ❌ {e}\n")
+        print(f"\n  [ERROR] {e}\n")
         return
 
     password = input("  Password : ").strip()
     ok, msg  = password_strength(password)
     if not ok:
-        print(f"\n  ❌ {msg}\n")
+        print(f"\n  [ERROR] {msg}\n")
         return
 
     hashed = hash_password(password)
@@ -52,12 +52,12 @@ def register_user() -> None:
             (username, hashed, "user", 0, 0, 0, str(datetime.now()))
         )
         conn.commit()
-        print(f"\n  ✅ User '{username}' registered successfully.")
-        print("  ⏳ Account is pending admin approval.\n")
+        print(f"\n  [OK] User '{username}' registered successfully.")
+        print("  [PENDING] Account is pending admin approval.\n")
         log_event(username, "REGISTERED")
 
     except sqlite3.IntegrityError:
-        print(f"\n  ❌ Username '{username}' is already taken.\n")
+        print(f"\n  [ERROR] Username '{username}' is already taken.\n")
 
     finally:
         conn.close()
@@ -77,7 +77,7 @@ def login_user() -> None:
     password = input("  Password : ").strip()
 
     if is_rate_limited(f"login:{username}"):
-        print("\n  🔴 Too many attempts. Please wait 5 minutes.\n")
+        print("\n  [BLOCKED] Too many attempts. Please wait 5 minutes.\n")
         log_event(username, "RATE_LIMITED")
         return
 
@@ -92,7 +92,7 @@ def login_user() -> None:
         ).fetchone()
 
         if not row:
-            print("\n  ❌ User not found.\n")
+            print("\n  [ERROR] User not found.\n")
             return
 
         stored_hash = row["password_hash"]
@@ -101,7 +101,7 @@ def login_user() -> None:
         locked      = row["locked"]
 
         if locked:
-            print("\n  🔒 Account locked. Contact an administrator.\n")
+            print("\n  [LOCKED] Account locked. Contact an administrator.\n")
             log_event(username, "ACCOUNT_LOCKED")
             return
 
@@ -116,17 +116,17 @@ def login_user() -> None:
                     "UPDATE users SET locked = 1 WHERE username = ?", (username,)
                 )
                 conn.commit()
-                print(f"\n  🔒 Account locked after {attempts} failed attempts.\n")
+                print(f"\n  [LOCKED] Account locked after {attempts} failed attempts.\n")
                 log_event(username, "ACCOUNT_LOCKED")
             else:
                 conn.commit()
                 remaining = 5 - attempts
-                print(f"\n  ❌ Wrong password. {remaining} attempt(s) remaining.\n")
+                print(f"\n  [ERROR] Wrong password. {remaining} attempt(s) remaining.\n")
                 log_event(username, "FAILED_LOGIN")
             return
 
         if not approved:
-            print("\n  ⏳ Account pending admin approval.\n")
+            print("\n  [PENDING] Account pending admin approval.\n")
             return
 
         conn.execute(
@@ -134,7 +134,7 @@ def login_user() -> None:
         )
         conn.commit()
         reset_rate_limit(f"login:{username}")
-        print(f"\n  ✅ Welcome, {username}! Login successful.\n")
+        print(f"\n  [OK] Welcome, {username}! Login successful.\n")
         log_event(username, "LOGIN_SUCCESS")
 
     finally:
@@ -159,7 +159,7 @@ def main() -> None:
     elif cmd == "login":
         login_user()
     else:
-        print(f"\n  ❌ Unknown command: '{cmd}'\n")
+        print(f"\n  [ERROR] Unknown command: '{cmd}'\n")
 
 
 if __name__ == "__main__":

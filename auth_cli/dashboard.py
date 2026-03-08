@@ -74,11 +74,11 @@ def main() -> None:
     # ── Title ────────────────────────────────────────────
     print("\n")
     print("  ╔══════════════════════════════════════════════════════════════╗")
-    print("  ║        🔐 Scyther Research Platform — Security Dashboard     ║")
+    print("  ║        Scyther Research Platform -- Security Dashboard       ║")
     print("  ╚══════════════════════════════════════════════════════════════╝")
 
     # ── User Statistics ──────────────────────────────────
-    header("👤  User Statistics")
+    header("User Statistics")
     print(f"  {'Total registered':<30} {stats['total_users']}")
     print(f"  {'Approved accounts':<30} {stats['approved']}")
     print(f"  {'Pending approval':<30} {stats['pending']}")
@@ -86,17 +86,17 @@ def main() -> None:
     print(f"  {'Blacklisted users':<30} {stats['blacklisted']}")
 
     # ── Login Events ─────────────────────────────────────
-    header("📋  Login Audit Summary")
+    header("Login Audit Summary")
     total = stats["success_logins"] + stats["failed_logins"]
     rate  = (stats["success_logins"] / total * 100) if total else 0
-    print(f"  {'Successful logins':<30} ✅ {stats['success_logins']}")
-    print(f"  {'Failed login attempts':<30} ❌ {stats['failed_logins']}")
-    print(f"  {'Account lock events':<30} 🔒 {stats['locked_events']}")
-    print(f"  {'Total events logged':<30} 📁 {stats['total_logs']}")
+    print(f"  {'Successful logins':<30} [OK]  {stats['success_logins']}")
+    print(f"  {'Failed login attempts':<30} [FAIL] {stats['failed_logins']}")
+    print(f"  {'Account lock events':<30} [LOCKED] {stats['locked_events']}")
+    print(f"  {'Total events logged':<30} {stats['total_logs']}")
     print(f"  {'Login success rate':<30} {rate:.1f}%")
 
     # ── Protocol Verification ────────────────────────────
-    header("🔬  Scyther Protocol Verification Results")
+    header("Scyther Protocol Verification Results")
     print(f"  {'Protocol':<22} {'Claims Pass':<14} {'Claims Fail':<14} {'Status'}")
     print(sep())
 
@@ -106,7 +106,7 @@ def main() -> None:
         result = parse_result(fpath)
 
         if not result["exists"]:
-            print(f"  {name:<22} {'—':<14} {'—':<14} ⚠  Not run yet")
+            print(f"  {name:<22} {'—':<14} {'—':<14} [WARN]  Not run yet")
             continue
 
         p = result["pass"]
@@ -115,15 +115,15 @@ def main() -> None:
         total_fail += f
         verified   += 1
 
-        status = "✅ SECURE" if f == 0 else f"❌ {f} FAIL"
+        status = "[SECURE]" if f == 0 else f"[FAIL] {f} FAIL"
         print(f"  {name:<22} {p:<14} {f:<14} {status}")
 
     print(sep())
     print(f"  {'TOTAL':<22} {total_pass:<14} {total_fail:<14} "
-          f"{'✅ All Secure' if total_fail == 0 and verified > 0 else '❌ Issues found'}")
+          f"{'[SECURE] All Secure' if total_fail == 0 and verified > 0 else '[FAIL] Issues found'}")
 
     # ── Attack Graphs ────────────────────────────────────
-    header("🗂   Attack Graphs")
+    header("Attack Graphs")
     dot_files = []
     png_files = []
     if os.path.exists(GRAPHS_DIR):
@@ -136,11 +136,11 @@ def main() -> None:
         print(f"\n  Files in attack_graphs/:")
         for f in sorted(dot_files):
             has_png = f.replace(".dot", ".png") in png_files
-            png_tag = "🖼 PNG ✔" if has_png else "🖼 PNG ✘"
+            png_tag = "PNG: Yes" if has_png else "PNG: No"
             print(f"    • {f:<40} {png_tag}")
 
     # ── Security Summary ─────────────────────────────────
-    header("🛡   Overall Security Assessment")
+    header("Overall Security Assessment")
     issues = []
     if stats["pending"]  > 0: issues.append(f"{stats['pending']} user(s) awaiting approval")
     if stats["locked"]   > 0: issues.append(f"{stats['locked']} account(s) locked")
@@ -148,9 +148,9 @@ def main() -> None:
     if not dot_files:         issues.append("No attack graphs generated yet")
 
     if not issues:
-        print("  ✅ All systems nominal. No security issues detected.\n")
+        print("  [OK] All systems nominal. No security issues detected.\n")
     else:
-        print("  ⚠  Action required:")
+        print("  [WARN]  Action required:")
         for issue in issues:
             print(f"     • {issue}")
         print()
