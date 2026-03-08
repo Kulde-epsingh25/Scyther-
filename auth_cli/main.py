@@ -22,7 +22,7 @@ def banner() -> None:
     print("\n")
     print("  ╔══════════════════════════════════════════════════════════════╗")
     print("  ║                                                              ║")
-    print("  ║    ███████╗ ██████╗██╗   ██╗████████╗██╗  ██╗███████╗██████╗║")
+    print("  ║    ███████╗ ██████╗██╗   ██╗████████╗██╗  ██╗███████╗██████╗ ║")
     print("  ║    ██╔════╝██╔════╝╚██╗ ██╔╝╚══██╔══╝██║  ██║██╔════╝██╔══██╗║")
     print("  ║    ███████╗██║      ╚████╔╝    ██║   ███████║█████╗  ██████╔╝║")
     print("  ║    ╚════██║██║       ╚██╔╝     ██║   ██╔══██║██╔══╝  ██╔══██╗║")
@@ -32,10 +32,10 @@ def banner() -> None:
     print("  ║      Authentication & Authorisation Research Platform        ║")
     print("  ║         Formal Protocol Verification using Scyther CLI       ║")
     print("  ║                                                              ║")
-    print("  ║  Authors  : Kuldeep Singh & Sahil                           ║")
-    print("  ║  GitHub   : github.com/kulde-epsingh25                      ║")
-    print("  ║  Tool     : Scyther CLI — Formal Security Protocol Verifier ║")
-    print("  ║  Version  : 2.0                                             ║")
+    print("  ║  Authors  : Kuldeep Singh & Sahil                            ║")
+    print("  ║  GitHub   : github.com/kulde-epsingh25                       ║")
+    print("  ║  Tool     : Scyther CLI — Formal Security Protocol Verifier  ║")
+    print("  ║  Version  : 2.0                                              ║")
     print("  ╚══════════════════════════════════════════════════════════════╝\n")
 
 
