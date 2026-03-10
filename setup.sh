@@ -177,22 +177,85 @@ section "Step 6 — Scyther Protocol Verifier"
 
 SCYTHER_OK=false
 SCYTHER_INSTALL_DIR="/usr/local/bin"
+SCYTHER_BIN="$SCYTHER_INSTALL_DIR/scyther-linux"
 
-# Helper: test that the binary actually runs (with a 5-second timeout)
+# Timeout (seconds) used when testing a candidate Scyther binary.
+SCYTHER_TEST_TIMEOUT=5
+
+# ── Helper: test that a Scyther binary actually runs ─────────────────────────
 _test_scyther() {
     local bin="$1"
-    local output
-    output=$(timeout 5s "$bin" --help 2>&1) && return 0
+    local output rc
+    output=$(timeout "${SCYTHER_TEST_TIMEOUT}s" "$bin" --help 2>&1)
+    rc=$?
+    [[ $rc -eq 124 ]] && return 1   # timed out — binary hung
+    [[ $rc -eq 0   ]] && return 0   # exited cleanly
     echo "$output" | grep -qi "scyther\|usage\|option" && return 0
     return 1
 }
 
-# 6a. Check if scyther-linux already exists in PATH
+# ── Helper: ensure wget or curl is available; set $DOWNLOADER ─────────────────
+_ensure_downloader() {
+    if command -v wget &>/dev/null; then
+        DOWNLOADER="wget"
+    elif command -v curl &>/dev/null; then
+        DOWNLOADER="curl"
+    else
+        info "No download tool found — installing wget..."
+        $SUDO $PKG_MANAGER install -y wget 2>&1 | tail -3
+        if command -v wget &>/dev/null; then
+            DOWNLOADER="wget"
+        else
+            DOWNLOADER=""
+        fi
+    fi
+}
+
+# ── Helper: fetch a single URL to a destination file ─────────────────────────
+# Usage: _fetch <url> <dest>   Returns 0 on success, 1 on failure.
+# On failure, prints the captured error output so the user can diagnose it.
+_fetch() {
+    local url="$1" dest="$2" errtmp
+    errtmp=$(mktemp)
+    local rc=0
+    if [[ "$DOWNLOADER" == "wget" ]]; then
+        $SUDO wget --show-progress -O "$dest" "$url" 2>"$errtmp" || rc=$?
+    else
+        $SUDO curl -fL --progress-bar -o "$dest" "$url" 2>"$errtmp" || rc=$?
+    fi
+    if [[ $rc -ne 0 ]] && [[ -s "$errtmp" ]]; then
+        warn "    $(tail -3 "$errtmp")"
+    fi
+    rm -f "$errtmp"
+    return $rc
+}
+
+# ── Helper: install binary after a successful download ────────────────────────
+_install_scyther_bin() {
+    local src="$1"
+    $SUDO chmod +x "$src"
+    ok "Binary made executable: $src"
+    if _test_scyther "$src"; then
+        ok "Scyther binary verified — it runs correctly."
+        SCYTHER_OK=true
+    else
+        warn "Binary present but does not execute cleanly."
+        warn "It may require 32-bit compatibility libraries:"
+        warn "  sudo dpkg --add-architecture i386"
+        warn "  sudo apt-get update && sudo apt-get install libc6:i386 libstdc++6:i386"
+    fi
+}
+
+# ────────────────────────────────────────────────────────────────────────────
+# 6a. scyther-linux already in PATH
+# ────────────────────────────────────────────────────────────────────────────
 if command -v scyther-linux &>/dev/null; then
     ok "scyther-linux already in PATH: $(command -v scyther-linux)"
     SCYTHER_OK=true
 
-# 6b. Check if 'scyther' is installed (apt package may use this name)
+# ────────────────────────────────────────────────────────────────────────────
+# 6b. 'scyther' installed (apt may use this name) — create symlink
+# ────────────────────────────────────────────────────────────────────────────
 elif command -v scyther &>/dev/null; then
     ok "'scyther' command found: $(command -v scyther)"
     info "Creating 'scyther-linux' symlink → scyther ..."
@@ -202,11 +265,14 @@ elif command -v scyther &>/dev/null; then
         ok "Symlink created: $SCYTHER_INSTALL_DIR/scyther-linux → $SCYTHER_REAL"
         SCYTHER_OK=true
     else
-        warn "Symlink creation failed — try: sudo ln -sf $(command -v scyther) /usr/local/bin/scyther-linux"
+        warn "Symlink creation failed."
+        warn "Try manually: sudo ln -sf $SCYTHER_REAL /usr/local/bin/scyther-linux"
     fi
 
 else
+    # ──────────────────────────────────────────────────────────────────────
     # 6c. Try apt-get install scyther
+    # ──────────────────────────────────────────────────────────────────────
     info "Trying: $SUDO $PKG_MANAGER install -y scyther ..."
     if $SUDO $PKG_MANAGER install -y scyther 2>&1 | tail -5; then
         if command -v scyther &>/dev/null; then
@@ -222,76 +288,176 @@ else
         fi
     fi
 
-    # 6d. If apt failed, download the precompiled binary
+    # ──────────────────────────────────────────────────────────────────────
+    # 6d. Download precompiled binary — multiple fallback sources
+    # ──────────────────────────────────────────────────────────────────────
     if ! $SCYTHER_OK; then
-        info "Scyther not available via apt — attempting binary download..."
-
         ARCH=$(uname -m)
+        info "Scyther not available via apt — attempting binary download (arch: $ARCH)..."
+
+        # Ordered list of download sources: "Label|URL"
+        # Each entry is tried in turn; the first successful download wins.
         case "$ARCH" in
-            x86_64)      SCYTHER_URL="https://people.cispa.io/cas.cremers/scyther/scyther-linux" ;;
-            aarch64|*)   SCYTHER_URL="" ;;
+            x86_64)
+                SCYTHER_SOURCES=(
+                    "Official CISPA site|https://people.cispa.io/cas.cremers/scyther/scyther-linux"
+                    "GitHub Releases — cascremers/scyther (latest)|https://github.com/cascremers/scyther/releases/latest/download/scyther-linux"
+                    "GitHub Releases — cascremers/scyther v1.1.3|https://github.com/cascremers/scyther/releases/download/v1.1.3/scyther-linux"
+                    "GitHub raw binary (master branch)|https://raw.githubusercontent.com/cascremers/scyther/master/binaries/scyther-linux"
+                )
+                ;;
+            *)
+                SCYTHER_SOURCES=()
+                warn "No precompiled Scyther binary for architecture: $ARCH"
+                warn "Will attempt build from source (Method 6e) below."
+                ;;
         esac
 
-        if [[ -z "$SCYTHER_URL" ]]; then
-            warn "No precompiled Scyther binary for architecture: $ARCH"
-            warn "Download manually from: https://people.cispa.io/cas.cremers/scyther/"
-            warn "Place the binary at $SCYTHER_INSTALL_DIR/scyther-linux and run:"
-            warn "  sudo chmod +x $SCYTHER_INSTALL_DIR/scyther-linux"
-        else
-            # Install curl/wget if needed
-            DOWNLOADER=""
-            if command -v wget &>/dev/null; then
-                DOWNLOADER="wget"
-            elif command -v curl &>/dev/null; then
-                DOWNLOADER="curl"
-            else
-                info "Installing wget for downloading Scyther..."
-                $SUDO $PKG_MANAGER install -y wget 2>&1 | tail -3
-                command -v wget &>/dev/null && DOWNLOADER="wget"
-            fi
+        if [[ ${#SCYTHER_SOURCES[@]} -gt 0 ]]; then
+            _ensure_downloader
+        fi
 
-            if [[ -n "$DOWNLOADER" ]]; then
-                SCYTHER_BIN="$SCYTHER_INSTALL_DIR/scyther-linux"
-                info "Downloading Scyther binary from $SCYTHER_URL ..."
-                if [[ "$DOWNLOADER" == "wget" ]]; then
-                    $SUDO wget --show-progress -O "$SCYTHER_BIN" "$SCYTHER_URL" && DOWNLOAD_OK=true || DOWNLOAD_OK=false
+        if [[ -n "${DOWNLOADER:-}" && ${#SCYTHER_SOURCES[@]} -gt 0 ]]; then
+            TMPBIN=$(mktemp)
+            SOURCE_NUM=0
+            for SOURCE_ENTRY in "${SCYTHER_SOURCES[@]}"; do
+                SOURCE_NUM=$((SOURCE_NUM + 1))
+                SOURCE_LABEL="${SOURCE_ENTRY%%|*}"
+                SOURCE_URL="${SOURCE_ENTRY##*|}"
+
+                echo ""
+                info "  [${SOURCE_NUM}/${#SCYTHER_SOURCES[@]}] Trying: $SOURCE_LABEL"
+                info "        URL: $SOURCE_URL"
+
+                if _fetch "$SOURCE_URL" "$TMPBIN" && [[ -s "$TMPBIN" ]]; then
+                    $SUDO cp "$TMPBIN" "$SCYTHER_BIN"
+                    rm -f "$TMPBIN"
+                    ok "Downloaded from: $SOURCE_LABEL"
+                    _install_scyther_bin "$SCYTHER_BIN"
+                    $SCYTHER_OK && break
                 else
-                    $SUDO curl -fsSL -o "$SCYTHER_BIN" "$SCYTHER_URL" && DOWNLOAD_OK=true || DOWNLOAD_OK=false
+                    warn "  ✗ Failed: $SOURCE_LABEL"
+                    rm -f "$TMPBIN"
+                    TMPBIN=$(mktemp)
                 fi
+            done
+            rm -f "$TMPBIN"
+        elif [[ ${#SCYTHER_SOURCES[@]} -gt 0 ]]; then
+            err "No download tool (wget/curl) available."
+            warn "Install wget:  sudo apt-get install wget"
+            warn "Then re-run this setup script."
+        fi
+    fi
 
-                if $DOWNLOAD_OK && [[ -f "$SCYTHER_BIN" ]]; then
-                    $SUDO chmod +x "$SCYTHER_BIN"
-                    ok "Scyther binary downloaded and made executable: $SCYTHER_BIN"
-                    # Verify it actually runs
-                    if _test_scyther "$SCYTHER_BIN"; then
-                        ok "Scyther binary verified — it runs correctly."
-                        SCYTHER_OK=true
+    # ──────────────────────────────────────────────────────────────────────
+    # 6e. Build from source (last resort)
+    # ──────────────────────────────────────────────────────────────────────
+    if ! $SCYTHER_OK; then
+        echo ""
+        info "All binary download sources failed — attempting build from source..."
+        info "Repository: https://github.com/cascremers/scyther"
+
+        BUILD_OK=false
+
+        # Ensure build tools are present
+        BUILD_DEPS=(git cmake gcc make libssl-dev libgmp-dev flex bison)
+        info "Installing build dependencies: ${BUILD_DEPS[*]} ..."
+        if $SUDO $PKG_MANAGER install -y "${BUILD_DEPS[@]}" 2>&1 | tail -5; then
+            ok "Build dependencies installed."
+            BUILD_DEPS_OK=true
+        else
+            warn "Could not install all build dependencies."
+            BUILD_DEPS_OK=false
+        fi
+
+        if $BUILD_DEPS_OK; then
+            SCYTHER_SRC_DIR=$(mktemp -d)
+            info "Cloning Scyther source to $SCYTHER_SRC_DIR ..."
+
+            # Try GitHub first, then fall back to the official Git repo
+            SCYTHER_REPO_SOURCES=(
+                "GitHub (cascremers/scyther)|https://github.com/cascremers/scyther.git"
+                "Official Scyther Git|https://people.cispa.io/cas.cremers/scyther.git"
+            )
+
+            for REPO_ENTRY in "${SCYTHER_REPO_SOURCES[@]}"; do
+                REPO_LABEL="${REPO_ENTRY%%|*}"
+                REPO_URL="${REPO_ENTRY##*|}"
+                info "  Cloning from: $REPO_LABEL ($REPO_URL)"
+                if git clone --depth 1 "$REPO_URL" "$SCYTHER_SRC_DIR/scyther" 2>&1 | tail -3; then
+                    ok "Clone successful: $REPO_LABEL"
+                    CLONE_OK=true
+                    break
+                else
+                    warn "  ✗ Clone failed: $REPO_LABEL"
+                    CLONE_OK=false
+                    rm -rf "$SCYTHER_SRC_DIR/scyther"
+                fi
+            done
+
+            if ${CLONE_OK:-false}; then
+                info "Building Scyther..."
+                BUILD_DIR="$SCYTHER_SRC_DIR/scyther/src"
+                BUILD_LOG=$(mktemp)
+                if [[ -d "$BUILD_DIR" ]] && \
+                   (cd "$BUILD_DIR" && cmake -D TARGETOS=Unix . 2>&1 | tee -a "$BUILD_LOG" | tail -5) && \
+                   (cd "$BUILD_DIR" && make --jobs "$(nproc)" 2>&1 | tee -a "$BUILD_LOG" | tail -5); then
+
+                    # The Scyther build outputs the binary directly in src/
+                    BUILT_BIN="$BUILD_DIR/scyther-linux"
+                    if [[ -f "$BUILT_BIN" ]]; then
+                        $SUDO cp "$BUILT_BIN" "$SCYTHER_BIN"
+                        ok "Built binary installed to: $SCYTHER_BIN"
+                        _install_scyther_bin "$SCYTHER_BIN"
+                        BUILD_OK=true
                     else
-                        warn "Downloaded binary does not appear to execute correctly."
-                        warn "It may need 32-bit libraries. Try:"
-                        warn "  sudo dpkg --add-architecture i386"
-                        warn "  sudo apt-get update"
-                        warn "  sudo apt-get install libc6:i386 libstdc++6:i386"
+                        # Fallback: search for exact expected names in src/ and verify
+                        BUILT_BIN=$(find "$BUILD_DIR" -maxdepth 2 -type f \
+                                    -name "scyther-linux" -executable | head -1)
+                        if [[ -n "$BUILT_BIN" ]] && _test_scyther "$BUILT_BIN"; then
+                            $SUDO cp "$BUILT_BIN" "$SCYTHER_BIN"
+                            ok "Built binary installed to: $SCYTHER_BIN"
+                            _install_scyther_bin "$SCYTHER_BIN"
+                            BUILD_OK=true
+                        else
+                            warn "Build completed but could not locate a working output binary."
+                            warn "Full build log saved to: $BUILD_LOG"
+                        fi
                     fi
                 else
-                    err "Download failed."
-                    warn "Download Scyther manually from:"
-                    warn "  https://people.cispa.io/cas.cremers/scyther/"
-                    warn "Then run:"
-                    warn "  sudo mv scyther-linux /usr/local/bin/"
-                    warn "  sudo chmod +x /usr/local/bin/scyther-linux"
+                    warn "cmake/make build failed."
+                    warn "Full build log saved to: $BUILD_LOG"
+                    warn "Last 20 lines:"
+                    tail -20 "$BUILD_LOG" | while IFS= read -r line; do
+                        warn "  $line"
+                    done
                 fi
-            else
-                err "No download tool (wget/curl) available."
-                warn "Install wget:  sudo apt-get install wget"
-                warn "Then re-run this setup script."
+                # Clean up build log unless it contains useful error information
+                $SCYTHER_OK && rm -f "$BUILD_LOG"
             fi
+
+            rm -rf "$SCYTHER_SRC_DIR"
+        fi
+
+        if ! $BUILD_OK && ! $SCYTHER_OK; then
+            err "All Scyther installation methods failed."
+            warn "Manual installation steps:"
+            warn "  Option A — Download binary:"
+            warn "    wget https://people.cispa.io/cas.cremers/scyther/scyther-linux"
+            warn "    sudo mv scyther-linux /usr/local/bin/"
+            warn "    sudo chmod +x /usr/local/bin/scyther-linux"
+            warn ""
+            warn "  Option B — Build from source:"
+            warn "    sudo apt-get install git cmake gcc libssl-dev libgmp-dev flex bison"
+            warn "    git clone https://github.com/cascremers/scyther.git"
+            warn "    cd scyther/src && cmake . && make"
+            warn "    sudo cp scyther /usr/local/bin/scyther-linux"
         fi
     fi
 fi
 
-# Final recheck: honour any pre-existing installation or one done outside
-# the detection blocks above (e.g. a manually placed binary).
+# ── Final recheck ─────────────────────────────────────────────────────────────
+# Honour any pre-existing installation or a manually placed binary.
 if ! $SCYTHER_OK && command -v scyther-linux &>/dev/null; then
     ok "scyther-linux is available: $(command -v scyther-linux)"
     SCYTHER_OK=true
